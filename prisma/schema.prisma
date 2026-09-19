@@ -1,0 +1,112 @@
+// This is your Prisma schema file.
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─── User (synced from Clerk) ─────────────────────────────────────────────────
+model User {
+  id            String   @id @default(uuid())
+  clerkUserId   String   @unique
+  email         String   @unique
+  name          String?
+  imageUrl      String?
+
+  // Career profile (collected during onboarding)
+  industry      String?       // e.g. "tech-software-engineering"
+  subIndustry   String?       // e.g. "Full Stack Engineering"
+  bio           String?
+  experience    Int?          // Years of experience
+  skills        String[]
+
+  // Relations to AI-generated assets
+  assessments   Assessment[]
+  resume        Resume?
+  coverLetters  CoverLetter[]
+
+  // Back-reference to industry insights data
+  industryInsight IndustryInsight? @relation(fields: [industry], references: [industry])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// ─── Mock Interview Assessments ───────────────────────────────────────────────
+model Assessment {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  quizScore      Float    // Overall percentage score 0-100
+  questions      Json[]   // Array of { question, options, correctAnswer, userAnswer, isCorrect, explanation }
+  category       String   // "Technical" | "Behavioral" | "System Design"
+  improvementTip String?  // AI generated personalized tip
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ─── ATS Resume ───────────────────────────────────────────────────────────────
+model Resume {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content   String   @db.Text   // Structured JSON or Markdown
+  atsScore  Float?
+  feedback  String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Cover Letters ────────────────────────────────────────────────────────────
+model CoverLetter {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content        String   @db.Text
+  jobTitle       String
+  companyName    String
+  jobDescription String?  @db.Text
+  tone           String   @default("Technical & Impact-Driven")
+  status         String   @default("completed")
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// ─── Industry Insights (populated by Inngest cron) ────────────────────────────
+model IndustryInsight {
+  id                String   @id @default(cuid())
+  industry          String   @unique   // e.g. "tech-software-engineering"
+
+  users             User[]
+
+  // Salary benchmarks: [{ role, min, max, median, location }]
+  salaryRanges      Json[]
+
+  growthRate        Float    // e.g. 14.8
+  demandLevel       String   // "High" | "Medium" | "Low"
+  topSkills         String[] // Most in-demand skills
+  marketOutlook     String   // "Positive" | "Neutral" | "Challenging"
+  keyTrends         String[] // Key developments
+  recommendedSkills String[]
+
+  lastUpdated       DateTime @default(now())
+  nextUpdate        DateTime
+
+  @@index([industry])
+}
