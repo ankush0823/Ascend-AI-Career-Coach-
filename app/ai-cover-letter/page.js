@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import { 
   Mail, 
   Sparkles, 
@@ -15,46 +16,75 @@ import {
 } from "lucide-react";
 
 export default function CoverLetterPage() {
+  const { user } = useUser();
+  const [userName, setUserName] = useState("Applicant Name");
+  const [userEmail, setUserEmail] = useState("applicant@example.com");
   const [company, setCompany] = useState("Vercel");
-  const [role, setRole] = useState("Senior Full Stack Engineer");
+  const [role, setRole] = useState("Software Engineer");
   const [jobDescription, setJobDescription] = useState(
-    "Looking for a Senior Engineer with deep expertise in Next.js, React, serverless architectures, and distributed systems. You will build high-traffic customer-facing developer tools and optimize web performance at global edge scale."
+    "Looking for an experienced Engineer with expertise in Next.js, React, serverless architectures, and distributed systems. You will build high-traffic customer-facing developer tools."
   );
   const [tone, setTone] = useState("Technical & Impact-Driven");
   const [isGenerating, setIsGenerating] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const [generatedLetter, setGeneratedLetter] = useState(
-`Dear Hiring Team at Vercel,
+  useEffect(() => {
+    let name = user?.fullName || "";
+    let mail = user?.primaryEmailAddress?.emailAddress || "";
+    let userRole = "";
 
-I am writing to enthusiastically express my interest in the Senior Full Stack Engineer position. Having built and scaled production applications with Next.js 15, React 19, and distributed edge architectures for over 7 years, I have long admired Vercel's pioneering work in transforming modern web development.
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ascend_user_profile");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.name && !name) name = parsed.name;
+          if (parsed.email && !mail) mail = parsed.email;
+          if (parsed.currentRole || parsed.subIndustry) userRole = parsed.currentRole || parsed.subIndustry;
+        } catch (e) {}
+      }
+    }
 
-In my recent role at Apex Cloud Technologies, I spearheaded the complete migration from a monolithic backend to a Next.js App Router micro-frontend architecture. This initiative reduced end-user p99 load times by 48% across 1.2M active users and supported traffic spikes exceeding 15,000 requests per second. Your requirement for an engineer who understands both deep client-side performance and serverless distributed caching closely mirrors my day-to-day contributions.
+    if (name) setUserName(name);
+    if (mail) setUserEmail(mail);
+    if (userRole) setRole(userRole);
+  }, [user]);
 
-Key alignments I would bring to Vercel include:
-• Scalable Serverless & Edge Architectures: Extensive experience designing asynchronous event pipelines and distributed caching layers with Redis and Neon/PostgreSQL.
-• Next.js Mastery: Deep familiarity with React Server Components, streaming SSR, and server action telemetry.
-• Cross-Functional Leadership: Track record of mentoring engineers, driving automated testing standards, and aligning product velocity with robust engineering rigor.
+  const [generatedLetter, setGeneratedLetter] = useState("");
 
-I welcome the opportunity to discuss how my hands-on technical background can contribute to Vercel's edge ecosystem and developer tooling. Thank you for your time and consideration.
+  useEffect(() => {
+    setGeneratedLetter(
+`Dear Hiring Team at ${company},
+
+I am writing to enthusiastically express my interest in the ${role} position. Having built and scaled production applications with modern JavaScript frameworks and cloud architectures, I have long admired ${company}'s work and industry impact.
+
+In my recent engineering experience, I spearheaded key full-stack development initiatives, optimized database queries, and implemented scalable frontend component systems. Your requirement for an engineer who understands end-to-end performance and robust software design closely mirrors my day-to-day contributions.
+
+Key alignments I bring include:
+• Scalable Web & API Architectures: Extensive experience designing asynchronous pipelines, REST APIs, and microservices.
+• Modern Stack Mastery: Deep familiarity with Next.js, React, Node.js, and TypeScript.
+• Collaborative Engineering: Track record of mentoring teammates, driving code quality standards, and shipping features reliably.
+
+I welcome the opportunity to discuss how my background can contribute to ${company}'s goals. Thank you for your time and consideration.
 
 Warm regards,
-Alex Rivera
-alex.rivera@example.com | +1 (555) 349-2810`
-  );
+${userName}
+${userEmail}`
+    );
+  }, [userName, userEmail, company, role]);
 
   const [history, setHistory] = useState([
     {
       id: 1,
       company: "Vercel",
-      role: "Senior Full Stack Engineer",
+      role: "Software Engineer",
       date: "Today",
       tone: "Technical & Impact-Driven",
     },
     {
       id: 2,
       company: "Stripe",
-      role: "Staff Infrastructure Engineer",
+      role: "Infrastructure Engineer",
       date: "3 days ago",
       tone: "Concise & Analytical",
     },
@@ -66,14 +96,15 @@ alex.rivera@example.com | +1 (555) 349-2810`
       setGeneratedLetter(
 `Dear Hiring Team at ${company || "the company"},
 
-I am writing to express my strong enthusiasm for the ${role || "Target Role"} position. With 7+ years of experience leading complex technical projects and scaling resilient web architectures, I am eager to apply my background in distributed systems and modern full-stack development to your team.
+I am writing to express my strong enthusiasm for the ${role || "Target Role"} position. With experience leading technical projects and building resilient web architectures, I am eager to apply my background to your team.
 
-After reviewing your requirements—specifically around ${jobDescription.slice(0, 80)}...—I am confident that my experience with Next.js, PostgreSQL, and high-throughput systems matches your objectives. At my previous organization, I scaled APIs to 15,000 req/sec and reduced production latency by 48% through meticulous cache optimization.
+After reviewing your requirements—specifically around ${jobDescription.slice(0, 80)}...—I am confident that my technical skills match your key objectives.
 
 I look forward to discussing how my experience will deliver immediate value to ${company}.
 
 Sincerely,
-Alex Rivera`
+${userName}
+${userEmail}`
       );
       setIsGenerating(false);
       setHistory((prev) => [

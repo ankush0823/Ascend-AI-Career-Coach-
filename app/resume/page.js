@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useUser } from "@clerk/nextjs";
 import { 
   FileText, 
   Sparkles, 
@@ -15,39 +16,71 @@ import {
 } from "lucide-react";
 
 export default function ResumeBuilderPage() {
+  const { user } = useUser();
   const [activeTab, setActiveTab] = useState("editor"); // editor | preview
   const [atsScore, setAtsScore] = useState(94);
   const [isEnhancing, setIsEnhancing] = useState(false);
 
   // Resume form state
   const [formData, setFormData] = useState({
-    fullName: "Alex Rivera",
-    title: "Senior Full Stack & Distributed Systems Engineer",
-    email: "alex.rivera@example.com",
-    phone: "+1 (555) 349-2810",
+    fullName: "User Profile",
+    title: "Software Engineer",
+    email: "user@example.com",
+    phone: "+1 (555) 019-2831",
     location: "San Francisco, CA (Open to Remote)",
-    website: "https://alexrivera.dev",
+    website: "https://github.com",
     summary:
-      "Senior Full Stack Engineer with 7+ years of experience architecting resilient distributed systems and responsive web applications using Next.js, React, Node.js, and PostgreSQL. Proven track record of scaling high-throughput APIs to 20k req/sec and mentoring cross-functional engineering squads.",
+      "Results-driven software engineer experienced in building modern web applications, scalable backends, and cloud solutions. Passionate about delivering high-impact features and writing clean, maintainable code.",
     experience: [
       {
         company: "Apex Cloud Technologies",
-        role: "Senior Full Stack Engineer",
+        role: "Software Engineer",
         duration: "2022 - Present",
         bullets:
-          "• Spearheaded migration from legacy monolithic architecture to Next.js 15 micro-frontends, reducing load times by 48% across 1.2M active users.\n• Architected asynchronous event-driven pipelines using Redis and background jobs, achieving 99.98% uptime during traffic surges.\n• Mentored 6 junior/mid engineers and introduced automated end-to-end testing, cutting release regressions by 35%.",
+          "• Spearheaded key microservice implementations, reducing latency by 35% across core user workflows.\n• Architected asynchronous event-driven pipelines using Redis and background jobs, achieving 99.98% uptime.\n• Mentored engineering teammates and introduced automated testing standards.",
       },
       {
         company: "Vanguard Systems",
-        role: "Full Stack Software Engineer",
+        role: "Full Stack Engineer",
         duration: "2019 - 2022",
         bullets:
-          "• Built high-performance REST and GraphQL APIs handling 5,000+ operations/second using Node.js and PostgreSQL.\n• Partnered with product and design teams to launch responsive web interfaces with sub-second interaction latencies.\n• Optimized database indexing and query patterns, lowering p99 database response times from 350ms to 42ms.",
+          "• Built high-performance APIs handling thousands of operations/second using Node.js and database optimizations.\n• Partnered with product teams to launch responsive user interfaces with sub-second response times.",
       },
     ],
-    skills: "Next.js 15, React 19, TypeScript, Node.js, PostgreSQL, Prisma, Redis, AWS (ECS, Lambda, RDS), Docker, System Design, GraphQL, Tailwind CSS",
-    education: "B.S. in Computer Science — University of California, Berkeley (2015 - 2019)",
+    skills: "React, Next.js, TypeScript, Node.js, PostgreSQL, Tailwind CSS, REST APIs, Git",
+    education: "B.S. in Computer Science — University of California (2015 - 2019)",
   });
+
+  useEffect(() => {
+    let name = user?.fullName || "";
+    let mail = user?.primaryEmailAddress?.emailAddress || "";
+    let role = "";
+    let userSkills = "";
+    let bioSummary = "";
+
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ascend_user_profile");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.name && !name) name = parsed.name;
+          if (parsed.email && !mail) mail = parsed.email;
+          if (parsed.currentRole || parsed.subIndustry) role = parsed.currentRole || parsed.subIndustry;
+          if (Array.isArray(parsed.skills) && parsed.skills.length > 0) userSkills = parsed.skills.join(", ");
+          if (parsed.bio) bioSummary = parsed.bio;
+        } catch (e) {}
+      }
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      fullName: name || prev.fullName,
+      email: mail || prev.email,
+      title: role || prev.title,
+      skills: userSkills || prev.skills,
+      summary: bioSummary || prev.summary,
+    }));
+  }, [user]);
 
   const handleEnhanceSummary = () => {
     setIsEnhancing(true);

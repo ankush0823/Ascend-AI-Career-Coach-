@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import { saveUserProfile } from "@/actions/dashboard";
 import { 
   Sparkles, 
   ArrowRight, 
@@ -17,16 +19,27 @@ import {
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const { user, isLoaded } = useUser();
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
-  const [industry, setIndustry] = useState("Tech");
-  const [subIndustry, setSubIndustry] = useState("Software Engineering");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [industry, setIndustry] = useState("Technology & Software");
+  const [subIndustry, setSubIndustry] = useState("Software Engineering (Full Stack)");
   const [experience, setExperience] = useState(4);
-  const [currentRole, setCurrentRole] = useState("Full Stack Developer");
+  const [currentRole, setCurrentRole] = useState("Software Engineer");
   const [skills, setSkills] = useState(["React", "Next.js", "TypeScript", "Node.js", "PostgreSQL"]);
   const [newSkill, setNewSkill] = useState("");
   const [bio, setBio] = useState("Software engineer passionate about building high-performance web systems and developer tooling.");
+
+  useEffect(() => {
+    if (user) {
+      if (user.fullName) setName(user.fullName);
+      if (user.primaryEmailAddress?.emailAddress) setEmail(user.primaryEmailAddress.emailAddress);
+    }
+  }, [user]);
 
   const handleAddSkill = (e) => {
     e.preventDefault();
@@ -40,9 +53,34 @@ export default function OnboardingPage() {
     setSkills(skills.filter((s) => s !== skillToRemove));
   };
 
-  const handleComplete = () => {
-    // In production this synchronizes to PostgreSQL via Prisma
-    router.push("/dashboard");
+  const handleComplete = async () => {
+    setIsSubmitting(true);
+    const profileData = {
+      clerkUserId: user?.id,
+      name: name || user?.fullName || "User",
+      email: email || user?.primaryEmailAddress?.emailAddress || "",
+      industry,
+      subIndustry,
+      experience,
+      currentRole,
+      skills,
+      bio,
+    };
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ascend_user_profile", JSON.stringify(profileData));
+    }
+
+    try {
+      if (user?.id) {
+        await saveUserProfile(profileData);
+      }
+    } catch (err) {
+      console.warn("Database sync notice:", err.message);
+    } finally {
+      setIsSubmitting(false);
+      router.push("/dashboard");
+    }
   };
 
   return (
@@ -256,10 +294,11 @@ export default function OnboardingPage() {
             <button
               type="button"
               onClick={handleComplete}
-              className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:opacity-95 text-xs font-bold text-white shadow-xl shadow-emerald-500/25 transition-all"
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-2 px-7 py-3 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:opacity-95 text-xs font-bold text-white shadow-xl shadow-emerald-500/25 transition-all disabled:opacity-50"
             >
               <CheckCircle2 className="w-4 h-4" />
-              <span>Complete Setup & Launch Dashboard</span>
+              <span>{isSubmitting ? "Saving Profile..." : "Complete Setup & Launch Dashboard"}</span>
             </button>
           )}
         </div>

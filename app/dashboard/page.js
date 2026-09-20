@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import { 
   TrendingUp, 
   Bot, 
@@ -22,7 +23,33 @@ import {
 } from "lucide-react";
 
 export default function DashboardPage() {
+  const { user } = useUser();
   const [selectedIndustry, setSelectedIndustry] = useState("software-engineering");
+  const [userName, setUserName] = useState("");
+
+  useEffect(() => {
+    if (user?.firstName) {
+      setUserName(user.firstName);
+    }
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ascend_user_profile");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.name && !user?.firstName) {
+            setUserName(parsed.name.split(" ")[0]);
+          }
+          if (parsed.subIndustry?.toLowerCase().includes("data") || parsed.subIndustry?.toLowerCase().includes("machine")) {
+            setSelectedIndustry("data-ai");
+          } else if (parsed.subIndustry?.toLowerCase().includes("product")) {
+            setSelectedIndustry("product");
+          } else {
+            setSelectedIndustry("software-engineering");
+          }
+        } catch (e) {}
+      }
+    }
+  }, [user]);
 
   const industryData = {
     "software-engineering": {
@@ -107,7 +134,7 @@ export default function DashboardPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Career Intelligence Dashboard
+                {userName ? `Welcome back, ${userName}!` : "Career Intelligence Dashboard"}
               </h1>
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-semibold">
                 Live Data

@@ -1,5 +1,6 @@
 "use client";
 
+import { useUser, UserButton } from "@clerk/nextjs";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { 
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 
 export default function Navbar() {
+  const { isSignedIn, isLoaded } = useUser();
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -70,19 +72,34 @@ export default function Navbar() {
 
         {/* CTA Buttons */}
         <div className="hidden md:flex items-center gap-4">
-          <Link
-            href="/sign-in"
-            className="text-sm font-semibold text-slate-300 hover:text-white px-4 py-2 transition-colors"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/dashboard"
-            className="relative group inline-flex items-center gap-2 text-sm font-semibold text-white px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-200 active:scale-[0.98]"
-          >
-            <span>Launch Dashboard</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-          </Link>
+          {isSignedIn ? (
+            <>
+              <Link
+                href="/dashboard"
+                className="relative group inline-flex items-center gap-2 text-sm font-semibold text-white px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-200 active:scale-[0.98]"
+              >
+                <span>Dashboard</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+              <UserButton afterSignOutUrl="/" />
+            </>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="text-sm font-semibold text-slate-300 hover:text-white px-4 py-2 transition-colors"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/sign-in"
+                className="relative group inline-flex items-center gap-2 text-sm font-semibold text-white px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-200 active:scale-[0.98]"
+              >
+                <span>Get Started</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -129,20 +146,28 @@ export default function Navbar() {
             </Link>
           </nav>
           <div className="pt-4 border-t border-slate-800 flex flex-col gap-3">
-            <Link
-              href="/sign-in"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center py-2.5 rounded-xl border border-slate-700 text-slate-200 font-semibold"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/dashboard"
-              onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold shadow-lg shadow-emerald-500/20"
-            >
-              Launch Dashboard
-            </Link>
+            {isSignedIn ? (
+              <>
+                <Link
+                  href="/dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full text-center py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold shadow-lg shadow-emerald-500/20"
+                >
+                  Launch Dashboard
+                </Link>
+                <div className="flex justify-center pt-2">
+                  <UserButton afterSignOutUrl="/" />
+                </div>
+              </>
+            ) : (
+              <Link
+                href="/sign-in"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full text-center py-2.5 rounded-xl border border-slate-700 text-slate-200 font-semibold"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
       )}

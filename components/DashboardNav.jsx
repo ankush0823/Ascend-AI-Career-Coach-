@@ -1,7 +1,9 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUser, UserButton } from "@clerk/nextjs";
 import { 
   Sparkles, 
   LayoutDashboard, 
@@ -15,6 +17,22 @@ import {
 
 export default function DashboardNav() {
   const pathname = usePathname();
+  const { user } = useUser();
+  const [userRole, setUserRole] = useState("Software Engineer");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ascend_user_profile");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.currentRole || parsed.subIndustry) {
+            setUserRole(parsed.currentRole || parsed.subIndustry);
+          }
+        } catch (e) {}
+      }
+    }
+  }, []);
 
   const navItems = [
     { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
@@ -77,14 +95,14 @@ export default function DashboardNav() {
 
           {/* User Profile Pill */}
           <div className="flex items-center gap-2.5 pl-1">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 p-[1px]">
-              <div className="w-full h-full rounded-full bg-slate-950 flex items-center justify-center text-xs font-bold text-white">
-                JD
-              </div>
-            </div>
+            <UserButton afterSignOutUrl="/" />
             <div className="hidden sm:flex flex-col text-left">
-              <span className="text-xs font-semibold text-white leading-tight">Alex Rivera</span>
-              <span className="text-[10px] text-emerald-400">Senior Full Stack</span>
+              <span className="text-xs font-semibold text-white leading-tight">
+                {user?.fullName || user?.firstName || "User"}
+              </span>
+              <span className="text-[10px] text-emerald-400 truncate max-w-[130px]">
+                {userRole}
+              </span>
             </div>
           </div>
         </div>
