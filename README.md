@@ -191,7 +191,7 @@ CLERK_SECRET_KEY=sk_test_...
 
 NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
 NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
-NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/dashboard
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/onboarding
 NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/onboarding
 
 # PostgreSQL (Neon or any Postgres)
@@ -226,21 +226,20 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🔄 How the AI Works
+## 🔄 How the AI & Authentication Work
 
 ```
-User Input (role, skills, experience)
+User Sign In (Google OAuth / Clerk)
          │
          ▼
-  Google Gemini 2.0 API
-         │
-    ┌────┴─────────────────────────┐
-    │                              │
-    ▼                              ▼
-Interview Questions          Industry Insights
-STAR Feedback                Salary Benchmarks
-Resume Enhancement           Market Trends
-Cover Letter Generation      Skill Recommendations
+Onboarding Calibration (/onboarding) ───► Collects Target Role, Industry, Skills, Bio
+         │                                (Pre-fills Google Name & Email)
+         ▼
+Personalized Platform Ecosystem
+ ├── Dashboard: Welcome greeting + Industry domain benchmarking
+ ├── Navigation Header: Dynamic Clerk UserButton + Target Role badge
+ ├── ATS Resume Builder: Personalized contact info, role & skills
+ └── Cover Letter Generator: Bespoke signature with user name & email
 ```
 
 **Background jobs (Inngest):**
@@ -253,22 +252,22 @@ Every Monday at 3 AM UTC, a cron job fetches all unique user industries and call
 | Route | Description |
 |---|---|
 | `/` | Landing page with interactive feature demos |
-| `/onboarding` | Career profile setup (industry, skills, experience) |
-| `/dashboard` | Salary charts, market outlook, skill radar |
+| `/sign-in` | Clerk authentication with Google OAuth integration |
+| `/onboarding` | Profile calibration (industry, role, skills, experience) |
+| `/dashboard` | Personalized career intelligence, salary distribution & skill radar |
 | `/interview` | AI mock interview simulator |
-| `/resume` | ATS resume builder with AI enhancement |
-| `/ai-cover-letter` | Cover letter generator and archive |
+| `/resume` | ATS resume builder pre-populated with user profile details |
+| `/ai-cover-letter` | Cover letter generator with dynamic user signature |
 
 ---
 
-## 🔐 Authentication & Authorization
+## 🔐 Authentication & Profile Flow
 
-Authentication is handled entirely by **Clerk**:
-- Email/password and social sign-in (Google, GitHub)
-- Session-based route protection via `middleware.js`
-- User data synced to PostgreSQL on first sign-in / onboarding completion
-- Public routes: `/`, `/sign-in`, `/sign-up`
-- Protected routes: `/dashboard`, `/interview`, `/resume`, `/ai-cover-letter`, `/onboarding`
+Authentication is handled via **Clerk**:
+- **Google OAuth & Passwordless Sign-In**: Clicking "Sign In" routes directly to Google authentication or Clerk sign-in.
+- **Post-Login Onboarding Redirect**: Authenticated users are directed to `/onboarding` to calibrate their target role, industry, experience, skills, and bio (with Google account name and email pre-filled).
+- **Dynamic Profile Synchronization**: User details are saved to PostgreSQL (and synchronized client-side) to populate user avatar (`UserButton`), name, email, target role, and resume/cover letter signatures dynamically.
+- **Route Protection**: Enforced via `middleware.js` across protected routes (`/dashboard`, `/interview`, `/resume`, `/ai-cover-letter`, `/onboarding`).
 
 ---
 
